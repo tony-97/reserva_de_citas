@@ -1,22 +1,49 @@
 import { useState, useEffect } from 'react';
 import { DataTable, StatusBadge } from '../../components/ui';
 import type { Column } from '../../components/ui/DataTable';
-import { useCitas } from '../../hooks/useCitas';
+import { useCitasHoy } from '../../hooks/useCitas';
+import { useAuth } from '../../context/AuthContext';
 import type { CitaUI } from '../../@types/cita';
 
 export function DashboardPage() {
-  const { citas, isLoading, error, fetchCitas } = useCitas();
+  const { user } = useAuth();
+  const { citas, isLoading, error, fetchCitas, updateCita } = useCitasHoy(user?.id || 0);
   const [selectedPaciente, setSelectedPaciente] = useState<CitaUI | null>(null);
+  const [observaciones, setObservaciones] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchCitas();
-  }, [fetchCitas]);
+    if (user?.id) fetchCitas();
+  }, [fetchCitas, user]);
 
   useEffect(() => {
     if (citas.length > 0 && !selectedPaciente) {
       setSelectedPaciente(citas[0]);
     }
   }, [citas]);
+
+  useEffect(() => {
+    if (selectedPaciente) {
+      // Si la API devolviera observaciones, las setearíamos aquí. Por ahora lo dejamos vacío al cambiar de paciente.
+      setObservaciones((selectedPaciente as any).observaciones || '');
+    }
+  }, [selectedPaciente]);
+
+  const handleSaveNotes = async () => {
+    if (!selectedPaciente) return;
+    setIsSaving(true);
+    await updateCita(Number(selectedPaciente.id), { observaciones });
+    setIsSaving(false);
+    alert('Observaciones guardadas exitosamente');
+  };
+
+  const handleMarkNoShow = async () => {
+    if (!selectedPaciente) return;
+    if (confirm('¿Marcar paciente como No Asistió?')) {
+      await updateCita(Number(selectedPaciente.id), { noShow: true, estado: 'No Asistió' });
+      setSelectedPaciente(null);
+    }
+  };
 
   const columns = [
     { header: 'Hora', accessor: (row: CitaUI) => <span className="font-semibold">{row.hora}</span> },
@@ -91,8 +118,34 @@ export function DashboardPage() {
 
                   <div>
                     <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Historial Clínico</h4>
-                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm text-slate-800 leading-relaxed">
-                      Sin antecedentes registrados previamente.
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-sm text-slate-800 leading-relaxed mb-4">
+                      {selectedPaciente.historial || 'Sin antecedentes registrados previamente.'}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-2">Observaciones de la Cita Actual</h4>
+                    <textarea 
+                      className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      rows={4}
+                      placeholder="Escriba aquí los diagnósticos o indicaciones médicas..."
+                      value={observaciones}
+                      onChange={(e) => setObservaciones(e.target.value)}
+                    ></textarea>
+                    <div className="flex gap-3 mt-3">
+                      <button 
+                        onClick={handleSaveNotes}
+                        disabled={isSaving}
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+                      >
+                        {isSaving ? 'Guardando...' : 'Guardar Observaciones'}
+                      </button>
+                      <button 
+                        onClick={handleMarkNoShow}
+                        className="px-4 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                      >
+                        Marcar Inasistencia (No-Show)
+                      </button>
                     </div>
                   </div>
                 </div>

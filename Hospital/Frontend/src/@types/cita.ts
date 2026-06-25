@@ -8,7 +8,9 @@ export interface CitaAPI {
   especialidadId: number;
   fecha: string;
   hora: string;
-  estado: 'confirmada' | 'pendiente' | 'cancelada';
+  estado: string;
+  observaciones?: string | null;
+  noShow?: boolean;
   paciente?: Paciente;
   medico?: Medico;
   especialidad?: Especialidad;
@@ -21,7 +23,9 @@ export interface CitaUI {
   medico: string;
   especialidad: string;
   paciente: string;
-  estado: 'confirmada' | 'pendiente' | 'cancelada';
+  estado: string;
+  observaciones?: string;
+  noShow?: boolean;
   motivo?: string;
   historial?: string;
 }

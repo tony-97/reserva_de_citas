@@ -40,7 +40,10 @@ export function ReservarCitaPage() {
       return;
     }
     api.medicos.list(Number(especialidadId))
-      .then((data: any[]) => setMedicos(data.map(m => ({ value: m.id.toString(), label: m.nombre }))))
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : (res.data || []);
+        setMedicos(list.map((m: any) => ({ value: m.id.toString(), label: m.nombre })));
+      })
       .catch(err => console.error(err));
   }, [especialidadId]);
 

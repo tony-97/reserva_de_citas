@@ -4,6 +4,7 @@ import { validateCita } from '../validators/citaValidator';
 
 const router = Router();
 
+router.get('/hoy', citaController.getToday);
 router.get('/', citaController.getAll);
 router.post('/', validateCita, citaController.create);
 router.put('/:id', citaController.update);

@@ -7,6 +7,7 @@ import authRoutes from './authRoutes';
 import adminRoutes from './adminRoutes';
 import turnosRoutes from './turnosRoutes';
 import pagosRoutes from './pagosRoutes';
+import reportRoutes from './reportRoutes';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/especialidades', especialidadRoutes);
 router.use('/admin', adminRoutes);
 router.use('/turnos', turnosRoutes);
 router.use('/pagos', pagosRoutes);
+router.use('/admin/reportes', reportRoutes);
 
 export default router;

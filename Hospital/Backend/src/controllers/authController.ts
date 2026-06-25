@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database';
+import { sendEmail, emailTemplates } from '../utils/mailer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
@@ -72,6 +73,57 @@ export const authController = {
         const tokens = signToken({ id, role, nombre });
         return res.json(tokens);
       });
+    } catch (e) { next(e); }
+  },
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: 'Correo requerido' });
+
+      const paciente = await prisma.paciente.findUnique({ where: { correo: email } });
+      if (!paciente) {
+        // Return 200 even if not found to prevent email enumeration
+        return res.json({ message: 'Si el correo existe, se ha enviado un enlace de recuperación.' });
+      }
+
+      const resetToken = jwt.sign({ id: paciente.id, role: 'PACIENTE' }, JWT_SECRET, { expiresIn: '15m' });
+      // Asume que el frontend corre en puerto 5173
+      const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}`;
+
+      await sendEmail(
+        paciente.correo,
+        'Recuperación de Contraseña',
+        emailTemplates.resetPassword,
+        { nombre: paciente.nombres, resetUrl }
+      );
+
+      return res.json({ message: 'Si el correo existe, se ha enviado un enlace de recuperación.' });
+    } catch (e) { next(e); }
+  },
+
+  async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { token, newPassword } = req.body;
+      if (!token || !newPassword) return res.status(400).json({ error: 'Faltan datos' });
+
+      let decoded: any;
+      try {
+        decoded = jwt.verify(token, JWT_SECRET);
+      } catch (err) {
+        return res.status(400).json({ error: 'Token inválido o expirado' });
+      }
+
+      if (decoded.role === 'PACIENTE') {
+        const hashedPassword = bcrypt.hashSync(newPassword, 10);
+        await prisma.paciente.update({
+          where: { id: decoded.id },
+          data: { password: hashedPassword }
+        });
+        return res.json({ message: 'Contraseña actualizada correctamente' });
+      }
+
+      return res.status(400).json({ error: 'Rol no soportado para recuperación' });
     } catch (e) { next(e); }
   }
 };

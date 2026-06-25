@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Button } from '../../components/ui';
 import { CheckCircle2, Printer, ArrowLeft, Receipt } from 'lucide-react';
 
@@ -20,6 +22,8 @@ export function ComprobantePage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [data, setData] = useState<ComprobanteData | null>(null);
+  const printRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (location.state?.comprobante) {
@@ -43,6 +47,25 @@ export function ComprobantePage() {
     );
   }
 
+  const handleDownloadPDF = async () => {
+    if (!printRef.current) return;
+    setIsGenerating(true);
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`comprobante-${data.transaccionId}.pdf`);
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <button
@@ -52,7 +75,7 @@ export function ComprobantePage() {
         <ArrowLeft size={18} /> Volver a Mis Citas
       </button>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      <div ref={printRef} className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
         <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white text-center">
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 size={36} className="text-white" />
@@ -94,13 +117,14 @@ export function ComprobantePage() {
             <span className="text-3xl font-bold text-green-600">S/ {data.monto}</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 mt-8">
             <Button
-              onClick={() => window.print()}
+              onClick={handleDownloadPDF}
               variant="secondary"
+              disabled={isGenerating}
               className="flex-1 flex items-center justify-center gap-2"
             >
-              <Printer size={18} /> Imprimir Comprobante
+              <Printer size={18} /> {isGenerating ? 'Generando...' : 'Descargar PDF'}
             </Button>
             <Button
               onClick={() => navigate('/paciente/mis-citas')}

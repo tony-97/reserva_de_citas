@@ -14,6 +14,7 @@ export const api = {
       const query = params ? new URLSearchParams(params as any).toString() : '';
       return fetchClient(`/citas${query ? `?${query}` : ''}`);
     },
+    hoy: (medicoId: number) => fetchClient(`/citas/hoy?medicoId=${medicoId}`),
     create: (data: any) => fetchClient('/citas', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: number, data: any) => fetchClient(`/citas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => fetchClient(`/citas/${id}`, { method: 'DELETE' }),

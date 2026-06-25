@@ -13,7 +13,9 @@ export const mapCitaFromAPI = (cita: CitaAPI): CitaUI => {
     paciente: cita.paciente ? `${cita.paciente.nombres} ${cita.paciente.apellidos}` : 'Desconocido',
     estado: cita.estado,
     motivo: 'Consulta General', 
-    historial: 'Sin antecedentes registrados' 
+    historial: 'Sin antecedentes registrados',
+    observaciones: cita.observaciones || '',
+    noShow: cita.noShow || false
   };
 };
 
@@ -61,5 +63,32 @@ export function useCitas(params?: Record<string, string | number>) {
     createCita: createMutation.mutateAsync,
     updateCita: async (id: number, data: any) => { await updateMutation.mutateAsync({ id, data }); return true; },
     deleteCita: async (id: number) => { await deleteMutation.mutateAsync(id); return true; }
+  };
+}
+
+export function useCitasHoy(medicoId: number) {
+  const queryClient = useQueryClient();
+
+  const { data: citas = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['citas-hoy', medicoId],
+    queryFn: async () => {
+      const response = await api.citas.hoy(medicoId) as any;
+      const list: CitaAPI[] = Array.isArray(response) ? response : (response.data || []);
+      return list.map(mapCitaFromAPI);
+    },
+    enabled: !!medicoId
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => api.citas.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['citas-hoy'] })
+  });
+
+  return {
+    citas,
+    isLoading: isLoading || updateMutation.isPending,
+    error: error ? error.message : null,
+    fetchCitas: refetch,
+    updateCita: async (id: number, data: any) => { await updateMutation.mutateAsync({ id, data }); return true; }
   };
 }
