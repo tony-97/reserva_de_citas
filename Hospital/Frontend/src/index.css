@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --color-primary-50: #e0f8fa;
+  --color-primary-100: #b3edf3;
+  --color-primary-500: #00A5B5;
+  --color-primary-600: #008f9d;
+  --color-primary-700: #00727e;
+  
+  --color-secondary-50: #e7eff7;
+  --color-secondary-500: #0B4F9A;
+  --color-secondary-600: #09407e;
+  --color-secondary-900: #042144;
+}
+
+:root {
+  --color-primary: #00A5B5;
+  --color-secondary: #0B4F9A;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+}

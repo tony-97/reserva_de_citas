@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Especialidad {
+  id       Int      @id @default(autoincrement())
+  nombre   String   @unique
+  medicos  Medico[]
+  citas    Cita[]
+}
+
+model Medico {
+  id             Int           @id @default(autoincrement())
+  nombre         String
+  colegiatura    String        @unique
+  password       String
+  especialidadId Int
+  especialidad   Especialidad  @relation(fields: [especialidadId], references: [id])
+  estado         String        @default("Activo")
+  citas          Cita[]
+  createdAt      DateTime      @default(now())
+}
+
+model Paciente {
+  id        Int      @id @default(autoincrement())
+  nombres   String
+  apellidos String
+  dni       String   @unique
+  telefono  String
+  correo    String   @unique
+  password  String
+  citas     Cita[]
+  createdAt DateTime @default(now())
+}
+
+model Cita {
+  id             Int         @id @default(autoincrement())
+  pacienteId     Int
+  paciente       Paciente    @relation(fields: [pacienteId], references: [id])
+  medicoId       Int
+  medico         Medico      @relation(fields: [medicoId], references: [id])
+  especialidadId Int
+  especialidad   Especialidad @relation(fields: [especialidadId], references: [id])
+  fecha          DateTime
+  hora           String
+  estado         String      @default("pendiente")
+  estadoPago     String      @default("Pendiente")
+  metodoPago     String      @default("")
+  transaccionId  String      @default("")
+  createdAt      DateTime    @default(now())
+
+  @@index([medicoId, fecha])
+  @@index([pacienteId])
+  @@index([fecha])
+}
