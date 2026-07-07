@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,17 +16,24 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { user, login, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    if (user.role === 'PACIENTE') navigate('/paciente/mis-citas', { replace: true });
+    else if (user.role === 'MEDICO') navigate('/medico/dashboard', { replace: true });
+    else if (user.role === 'ADMIN') navigate('/admin', { replace: true });
+  }, [user, authLoading, navigate]);
   
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema)
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const onSubmitForm = async (data: LoginForm) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     setGlobalError(null);
     try {
       await login(data.identifier, data.password);
@@ -43,7 +50,7 @@ export function LoginPage() {
     } catch (err: any) {
       setGlobalError(err.message || 'Error al iniciar sesión');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -92,8 +99,8 @@ export function LoginPage() {
           />
 
           <div className="pt-2">
-            <Button type="submit" size="lg" className="w-full text-lg shadow-xl shadow-secondary-500/20" disabled={isLoading}>
-              {isLoading ? 'Verificando...' : 'Ingresar al Portal'}
+            <Button type="submit" size="lg" className="w-full text-lg shadow-xl shadow-secondary-500/20" disabled={isSubmitting}>
+              {isSubmitting ? 'Verificando...' : 'Ingresar al Portal'}
             </Button>
           </div>
 

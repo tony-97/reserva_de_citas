@@ -19,7 +19,8 @@ export const citaController = {
       const medicoId = Number(req.query.medicoId);
       if (!medicoId) return res.status(400).json({ error: 'medicoId es requerido' });
       const result = await citaService.getTodayByMedico(medicoId);
-      res.json(result);
+      // Devolvemos una estructura consistente `{ data: [...] }` similar a otros endpoints
+      res.json({ data: result });
     } catch (e) { next(e); }
   },
   async create(req: Request, res: Response, next: NextFunction) {

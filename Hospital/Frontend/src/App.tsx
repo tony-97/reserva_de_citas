@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ErrorBoundary } from './components/layout/ErrorBoundary';
 import { PublicLayout } from './components/layout';
 import { GlobalLoader } from './components/layout/GlobalLoader';
+import { ToastProvider } from './components/ui/Toast';
 import { HomePage } from './pages/HomePage';
 import { RegistroPage } from './pages/RegistroPage';
 import { LoginPage } from './pages/LoginPage';
@@ -61,11 +62,13 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>
-            <GlobalLoader>
-              <AnimatedRoutes />
-            </GlobalLoader>
-          </BrowserRouter>
+          <ToastProvider>
+            <BrowserRouter>
+              <GlobalLoader>
+                <AnimatedRoutes />
+              </GlobalLoader>
+            </BrowserRouter>
+          </ToastProvider>
         </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

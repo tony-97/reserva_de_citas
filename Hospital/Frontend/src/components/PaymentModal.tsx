@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CreditCard, Lock, AlertCircle, CheckCircle2, Smartphone, Building } from 'lucide-react';
 
@@ -13,7 +13,6 @@ export function PaymentModal({ isOpen, onClose, onSuccess, monto = '80.00' }: Pa
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'whatsapp' | 'recepcion'>('tarjeta');
   const [step, setStep] = useState<'form' | 'processing' | 'success' | 'error'>('form');
   const [errorMsg, setErrorMsg] = useState('');
-  const invoiceRef = useRef<HTMLDivElement>(null);
 
   const isFormValid = () => {
     return true; // En el mock seguro, la tarjeta se maneja externamente

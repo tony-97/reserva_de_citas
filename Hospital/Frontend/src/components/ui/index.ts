@@ -6,3 +6,4 @@ export * from './TimeSlotGrid';
 export * from './DataTable';
 export * from './StatusBadge';
 export * from './Modal';
+export * from './Toast';

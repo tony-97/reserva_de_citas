@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react';
 import { DataTable, StatusBadge } from '../../components/ui';
 import type { Column } from '../../components/ui/DataTable';
-import { useCitasHoy } from '../../hooks/useCitas';
+import { useCitasHoy, useCitas } from '../../hooks/useCitas';
 import { useAuth } from '../../context/AuthContext';
 import type { CitaUI } from '../../@types/cita';
 
 export function DashboardPage() {
   const { user } = useAuth();
-  const { citas, isLoading, error, fetchCitas, updateCita } = useCitasHoy(user?.id || 0);
+  const [viewMode, setViewMode] = useState<'hoy' | 'proximas'>('hoy');
+  const { citas: hoyCitas, isLoading: loadingHoy, error: errorHoy, fetchCitas, updateCita } = useCitasHoy(user?.id || 1);
+  const { citas: todasCitas, isLoading: loadingTodas, error: errorTodas, fetchCitas: fetchTodas } = useCitas(user?.id ? { medicoId: user.id } : undefined);
+  const isLoading = viewMode === 'hoy' ? loadingHoy : loadingTodas;
+  const error = viewMode === 'hoy' ? errorHoy : errorTodas;
+  const citasSource = viewMode === 'hoy' ? hoyCitas : todasCitas;
   const [selectedPaciente, setSelectedPaciente] = useState<CitaUI | null>(null);
   const [observaciones, setObservaciones] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (user?.id) fetchCitas();
-  }, [fetchCitas, user]);
+    if (user?.id) {
+      if (viewMode === 'hoy') fetchCitas();
+      else fetchTodas();
+    }
+  }, [fetchCitas, fetchTodas, user, viewMode]);
 
   useEffect(() => {
-    if (citas.length > 0 && !selectedPaciente) {
-      setSelectedPaciente(citas[0]);
+    if (citasSource.length > 0 && !selectedPaciente) {
+      setSelectedPaciente(citasSource[0]);
     }
-  }, [citas]);
+  }, [citasSource]);
 
   useEffect(() => {
     if (selectedPaciente) {
@@ -66,10 +74,16 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <h2 className="text-xl font-semibold mb-4 text-slate-800">Citas Programadas</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-slate-800">Citas Programadas</h2>
+            <div className="bg-slate-100 p-1 rounded-xl flex gap-1">
+              <button onClick={() => setViewMode('hoy')} className={`px-3 py-1 rounded-lg text-sm ${viewMode === 'hoy' ? 'bg-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}>Hoy</button>
+              <button onClick={() => setViewMode('proximas')} className={`px-3 py-1 rounded-lg text-sm ${viewMode === 'proximas' ? 'bg-white shadow-sm' : 'text-slate-600 hover:bg-slate-200'}`}>Próximas</button>
+            </div>
+          </div>
           {isLoading ? (
             <div className="text-center py-12 text-slate-500">Cargando citas...</div>
-          ) : citas.length === 0 ? (
+          ) : citasSource.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-slate-200 shadow-sm text-slate-500">
               No hay citas programadas para mostrar.
             </div>
@@ -77,7 +91,13 @@ export function DashboardPage() {
             <>
               <div className="cursor-pointer">
                 <DataTable
-                  data={citas}
+                  data={
+                    // Si mostramos próximas, filtramos las citas por fecha >= hoy y ordenamos
+                    viewMode === 'hoy'
+                      ? hoyCitas
+                      : todasCitas.filter(c => new Date(c.fecha) >= new Date(new Date().toISOString().split('T')[0]))
+                          .sort((a,b) => a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora))
+                  }
                   columns={columns}
                   keyExtractor={row => row.id}
                   onEdit={(row) => setSelectedPaciente(row)}

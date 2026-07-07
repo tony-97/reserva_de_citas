@@ -25,13 +25,14 @@ export const pagosController = {
 
       const transaccionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 9000) + 1000}`;
 
+      // Actualizamos solo el estado de pago; la confirmación de la cita
+      // debe ser realizada por un administrador. No forzamos `estado: 'confirmada'`.
       const citaActualizada = await prisma.cita.update({
         where: { id: cita.id },
         data: {
           estadoPago: 'Pagado',
           metodoPago,
           transaccionId,
-          estado: 'confirmada',
         },
         include: { paciente: true, medico: true, especialidad: true },
       });
