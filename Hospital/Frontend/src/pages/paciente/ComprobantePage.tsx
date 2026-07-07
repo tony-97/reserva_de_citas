@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { Button } from '../../components/ui';
 import { CheckCircle2, Printer, ArrowLeft, Receipt, Activity, FileText } from 'lucide-react';
 
@@ -68,7 +68,7 @@ export function ComprobantePage() {
         especialidad: especialidadNombre,
         dni: dniPaciente || 'No registrado'
       });
-      
+
       setTipoPaciente(location.state.tipoPaciente || 'SIS');
     }
   }, [location.state]);
@@ -98,7 +98,7 @@ export function ComprobantePage() {
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
+
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(`comprobante-${comprobanteData?.transaccionId || citaData?.id}.pdf`);
     } catch (error) {
