@@ -6,14 +6,15 @@ import { z } from 'zod';
 import { Button, Input } from '@/components/ui';
 import { api } from '@/api/endpoints';
 import { useAuth } from '@/context/AuthContext';
-import { UserPlus, User, CreditCard, Phone, Mail } from 'lucide-react';
+import { UserPlus, User, CreditCard, Phone, Mail, Lock } from 'lucide-react';
 
 const registroSchema = z.object({
   nombres: z.string().min(2, 'Los nombres son requeridos'),
   apellidos: z.string().min(2, 'Los apellidos son requeridos'),
   dni: z.string().length(8, 'El DNI debe tener exactamente 8 dígitos').regex(/^\d+$/, 'El DNI solo debe contener números'),
   telefono: z.string().min(6, 'Teléfono inválido'),
-  correo: z.string().email('Ingrese un correo electrónico válido')
+  correo: z.string().email('Ingrese un correo electrónico válido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
 });
 
 type RegistroForm = z.infer<typeof registroSchema>;
@@ -35,8 +36,8 @@ export function RegistroPage() {
     setApiError(null);
     try {
       await api.pacientes.create(data);
-      // Auto-login con el DNI recién registrado (usará default password 123456)
-      await login(data.dni, '123456');
+      // Auto-login con el DNI y contraseña recién registrados
+      await login(data.dni, data.password);
       navigate('/reservar');
     } catch (err: any) {
       setApiError(err.message || 'Ocurrió un error al registrar.');
@@ -113,6 +114,15 @@ export function RegistroPage() {
             error={errors.correo?.message}
             placeholder="correo@ejemplo.com"
             icon={<Mail size={20} />}
+          />
+
+          <Input
+            label="Contraseña"
+            type="password"
+            {...register('password')}
+            error={errors.password?.message}
+            placeholder="********"
+            icon={<Lock size={20} />}
           />
 
           <div className="pt-6">
