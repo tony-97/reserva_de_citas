@@ -10,7 +10,7 @@ import { CalendarCheck, PlusCircle, Clock, Calendar } from 'lucide-react';
 export function MisCitasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { citas, isLoading, error, fetchCitas, deleteCita, updateCita } = useCitas();
+  const { citas, isLoading, error, fetchCitas, deleteCita, updateCita } = useCitas(user?.id ? { pacienteId: user.id } : { pacienteId: -1 });
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [citaToDelete, setCitaToDelete] = useState<any | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
