@@ -40,9 +40,26 @@ export const citaService = {
       medicoId: Number(data.medicoId),
       especialidadId: Number(data.especialidadId),
       fecha: new Date(data.fecha as any),
-      hora: data.hora
+      hora: data.hora,
+      // Permitir que el cliente indique un estado inicial (ej. 'confirmada' para SIS)
+      ...(data.estado ? { estado: String(data.estado) } : {})
     };
     
+    // Evitar duplicados: si ya existe una cita con mismo paciente, médico, fecha y hora, devolverla
+    const existing = await prisma.cita.findFirst({
+      where: {
+        pacienteId: Number(permitidos.pacienteId),
+        medicoId: Number(permitidos.medicoId),
+        fecha: new Date((permitidos.fecha as Date).toISOString()),
+        hora: permitidos.hora
+      },
+      include: { paciente: true, especialidad: true }
+    });
+
+    if (existing) {
+      return existing;
+    }
+
     const cita = await prisma.cita.create({ 
       data: permitidos,
       include: { paciente: true, especialidad: true }

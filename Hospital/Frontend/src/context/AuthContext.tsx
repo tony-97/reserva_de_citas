@@ -7,6 +7,7 @@ export interface User {
   id: number;
   role: Role;
   nombre: string;
+  dni?: string;
 }
 
 interface AuthContextType {
@@ -33,7 +34,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (identifier: string, password?: string) => {
     const pwd = password || '123456';
     const response = await api.auth.login({ identifier, password: pwd });
-    const userData = { id: response.id, role: response.role, nombre: response.nombre, token: response.token };
+    const userData = {
+      id: response.id,
+      role: response.role,
+      nombre: response.nombre,
+      dni: response.dni,
+      token: response.token,
+    };
     setUser(userData);
     localStorage.setItem('hospital_user', JSON.stringify(userData));
   };

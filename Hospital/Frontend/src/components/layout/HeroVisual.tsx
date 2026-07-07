@@ -1,16 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '../ui';
+import { useState } from 'react';
+import { LoginModal } from '@/components/auth/LoginModal';
 import { ArrowRight, Shield, Clock, Award } from 'lucide-react';
-
-const crossVariants = {
-  initial: { pathLength: 0, opacity: 0 },
-  animate: {
-    pathLength: 1,
-    opacity: 1,
-    transition: { duration: 2.5, ease: 'easeInOut' as const }
-  }
-};
+import { useAuth } from '../../context/AuthContext';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,7 +29,7 @@ const floatingCardVariants = {
     y: 0,
     opacity: 1,
     scale: 1,
-    transition: { delay: 1 + i * 0.25, duration: 0.6, ease: 'easeOut' }
+    transition: { delay: 1 + i * 0.25, duration: 0.6, ease: 'easeOut' as const }
   })
 };
 
@@ -47,6 +41,14 @@ const cards = [
 
 export function HeroVisual() {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Extraemos 'user' para verificar el estado de autenticación
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+  // Función para manejar el clic en "RESERVAR CITA AHORA"
+  const handleBookingClick = () => {
+    if (user) navigate('/reservar');
+    else setIsLoginOpen(true);
+  };
 
   return (
     <div className="relative bg-secondary-900 min-h-[100dvh] lg:min-h-0 lg:h-[600px] flex flex-col justify-center overflow-hidden">
@@ -63,8 +65,6 @@ export function HeroVisual() {
       </div>
 
       <div className="absolute inset-0 z-10 bg-black/10" />
-
-
 
       <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <motion.div
@@ -94,7 +94,7 @@ export function HeroVisual() {
               <Button
                 size="lg"
                 variant="primary"
-                onClick={() => navigate('/registro')}
+                onClick={handleBookingClick}
                 className="group shadow-xl shadow-primary-500/30"
               >
                 RESERVAR CITA AHORA
@@ -106,18 +106,13 @@ export function HeroVisual() {
                   <ArrowRight className="w-5 h-5" />
                 </motion.span>
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => navigate('/login')}
-                className="border-secondary-900 text-secondary-900 hover:bg-secondary-900/5 hover:border-secondary-900"
-              >
-                Portal del Paciente
-              </Button>
+              {/* Se elimina el botón 'Portal del Paciente' del banner para evitar duplicidad de acción */}
             </motion.div>
           </div>
         </motion.div>
       </div>
+
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 hidden lg:flex gap-6 w-full max-w-4xl justify-center">
         {cards.map((card, i) => {

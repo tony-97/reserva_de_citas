@@ -25,9 +25,19 @@ export const authController = {
         return res.status(400).json({ error: 'Credenciales incompletas' });
       }
 
-      if (identifier === ADMIN_EMAIL && bcrypt.compareSync(password, ADMIN_PASSWORD_HASH)) {
-        const { token, refreshToken } = signToken({ id: 0, role: 'ADMIN', nombre: 'Administrador Principal' });
-        return res.json({ token, refreshToken, id: 0, role: 'ADMIN', nombre: 'Administrador Principal' });
+      // Admin login: support two modes
+      // - If ADMIN_PASSWORD_HASH is configured, verify with bcrypt
+      // - Otherwise, allow a plain-text fallback using ADMIN_PASSWORD env or default 'admin123'
+      if (identifier === ADMIN_EMAIL) {
+        const envPlain = process.env.ADMIN_PASSWORD || 'admin123';
+        const isAdmin = ADMIN_PASSWORD_HASH
+          ? bcrypt.compareSync(password, ADMIN_PASSWORD_HASH)
+          : password === envPlain;
+
+        if (isAdmin) {
+          const { token, refreshToken } = signToken({ id: 0, role: 'ADMIN', nombre: 'Administrador Principal' });
+          return res.json({ token, refreshToken, id: 0, role: 'ADMIN', nombre: 'Administrador Principal' });
+        }
       }
 
       const paciente = await prisma.paciente.findFirst({
@@ -40,7 +50,7 @@ export const authController = {
         }
         const nombre = `${paciente.nombres} ${paciente.apellidos}`;
         const { token, refreshToken } = signToken({ id: paciente.id, role: 'PACIENTE', nombre });
-        return res.json({ token, refreshToken, id: paciente.id, role: 'PACIENTE', nombre });
+        return res.json({ token, refreshToken, id: paciente.id, role: 'PACIENTE', nombre, dni: paciente.dni });
       }
 
       const medico = await prisma.medico.findFirst({

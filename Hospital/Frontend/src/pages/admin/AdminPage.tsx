@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { DataTable, Button, Modal, Input } from '@/components/ui';
+import type { Column } from '@/components/ui/DataTable';
 import { api } from '@/api/endpoints';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
 
-type Tab = 'medicos' | 'pacientes' | 'especialidades';
+type Tab = 'medicos' | 'pacientes' | 'especialidades' | 'citas';
 
 const medicoSchema = z.object({
   nombre: z.string().min(2, 'Obligatorio'),
@@ -38,15 +38,18 @@ export function AdminPage() {
 
   const [medicos, setMedicos] = useState<any[]>([]);
   const [pacientes, setPacientes] = useState<any[]>([]);
+  const [citas, setCitas] = useState<any[]>([]);
   const [especialidades, setEspecialidades] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmingCita, setConfirmingCita] = useState<any | null>(null);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [deletingItem, setDeletingItem] = useState<any | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [, setIsSubmitting] = useState(false);
 
   const medicoFormMethods = useForm<MedicoFormType>({ resolver: zodResolver(medicoSchema), defaultValues: { estado: 'Activo' } });
   const pacienteFormMethods = useForm<PacienteFormType>({ resolver: zodResolver(pacienteSchema) });
@@ -61,9 +64,12 @@ export function AdminPage() {
       api.admin.especialidades.list(),
     ])
       .then(([medicosData, pacientesData, especialidadesData]) => {
-        setMedicos(medicosData);
-        setPacientes(pacientesData);
-        setEspecialidades(especialidadesData);
+        const normalize = (r: any) => Array.isArray(r) ? r : (r?.data ?? r);
+        setMedicos(normalize(medicosData));
+        setPacientes(normalize(pacientesData));
+        setEspecialidades(normalize(especialidadesData));
+        // Cargar también citas para la pestaña admin
+        api.citas.list().then((citasData: any) => setCitas(Array.isArray(citasData) ? citasData : (citasData.data || []))).catch(() => {});
       })
       .catch(err => setError(err.message || 'Error al cargar los datos'))
       .finally(() => setIsLoading(false));
@@ -209,18 +215,35 @@ export function AdminPage() {
     },
   ];
 
+  const citasCols = [
+    { header: 'Fecha', accessor: (row: any) => <span className="font-semibold">{row.fecha}</span> },
+    { header: 'Hora', accessor: 'hora' as const },
+    { header: 'Paciente', accessor: (row: any) => <span className="font-medium">{row.paciente?.nombres ? `${row.paciente.nombres} ${row.paciente.apellidos}` : row.paciente || 'Desconocido'}</span> },
+    { header: 'Médico', accessor: (row: any) => row.medico?.nombre || row.medico || '-' },
+    { header: 'Estado', accessor: (row: any) => <span className="capitalize">{row.estado}</span> },
+    { header: 'Acciones', accessor: (row: any) => (
+      <div className="flex items-center gap-2">
+        {row.estado !== 'confirmada' && (
+          <button onClick={() => { setConfirmingCita(row); setIsConfirmModalOpen(true); }} className="text-green-600 hover:text-green-800">Confirmar</button>
+        )}
+      </div>
+    ) }
+  ] as const satisfies Column<any>[];
+
   /* ── Tab names ── */
 
   const tabLabel: Record<Tab, string> = {
     medicos: 'Médicos del Staff',
     pacientes: 'Pacientes Registrados',
     especialidades: 'Especialidades',
+    citas: 'Citas'
   };
 
   const createLabel: Record<Tab, string> = {
     medicos: '+ Nuevo Médico',
     pacientes: '+ Nuevo Paciente',
     especialidades: '+ Nueva Especialidad',
+    citas: 'Ver Citas',
   };
 
   /* ── Render ── */
@@ -266,9 +289,11 @@ export function AdminPage() {
           <DataTable data={medicos} columns={medicoCols} keyExtractor={r => r.id.toString()} onEdit={openEdit} onDelete={openDelete} />
         ) : activeTab === 'pacientes' ? (
           <DataTable data={pacientes} columns={pacienteCols} keyExtractor={r => r.id.toString()} onEdit={openEdit} onDelete={openDelete} />
-        ) : (
+        ) : activeTab === 'especialidades' ? (
           <DataTable data={especialidades} columns={especialidadCols} keyExtractor={r => r.id.toString()} onDelete={openDelete} />
-        )}
+        ) : activeTab === 'citas' ? (
+          <DataTable data={citas} columns={citasCols} keyExtractor={r => r.id.toString()} />
+        ) : null}
       </div>
 
       {/* Form Modal */}
@@ -344,6 +369,25 @@ export function AdminPage() {
             <span className="block mt-2 text-sm text-red-600">Esta acción también eliminará los médicos asociados.</span>
           )}
         </p>
+      </Modal>
+      {/* Confirmar Cita Modal */}
+      <Modal
+        isOpen={isConfirmModalOpen}
+        onClose={() => { setIsConfirmModalOpen(false); setConfirmingCita(null); }}
+        title="Confirmar Cita"
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+        onConfirm={async () => {
+          if (!confirmingCita) return;
+          try {
+            await api.citas.update(confirmingCita.id, { estado: 'confirmada' });
+            setIsConfirmModalOpen(false);
+            setConfirmingCita(null);
+            loadData();
+          } catch (e: any) { setError(e.message || 'Error al confirmar'); }
+        }}
+      >
+        <p className="text-slate-600 py-2">¿Desea confirmar la cita del paciente <span className="font-semibold">{confirmingCita?.paciente?.nombres ? `${confirmingCita.paciente.nombres} ${confirmingCita.paciente.apellidos}` : confirmingCita?.paciente}</span> para el <span className="font-semibold">{confirmingCita?.fecha}</span> a las <span className="font-semibold">{confirmingCita?.hora}</span>?</p>
       </Modal>
     </div>
   );

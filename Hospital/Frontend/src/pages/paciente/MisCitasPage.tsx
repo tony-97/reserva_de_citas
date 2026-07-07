@@ -5,18 +5,23 @@ import type { Column } from '../../components/ui/DataTable';
 import type { CitaUI } from '../../@types/cita';
 import { useCitas } from '../../hooks/useCitas';
 import { useAuth } from '../../context/AuthContext';
-import { CalendarCheck, PlusCircle } from 'lucide-react';
+import { CalendarCheck, PlusCircle, Clock, Calendar } from 'lucide-react';
 
 export function MisCitasPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { citas, isLoading, error, fetchCitas, deleteCita } = useCitas();
+  const { citas, isLoading, error, fetchCitas, deleteCita, updateCita } = useCitas();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [citaToDelete, setCitaToDelete] = useState<any | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [citaToEdit, setCitaToEdit] = useState<any | null>(null);
+  const [newFecha, setNewFecha] = useState<Date | null>(null);
+  const [newHora, setNewHora] = useState('');
+  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
 
   useEffect(() => {
     if (user?.id) {
-      fetchCitas({ pacienteId: user.id });
+      fetchCitas();
     }
   }, [fetchCitas, user?.id]);
 
@@ -30,6 +35,34 @@ export function MisCitasPage() {
       await deleteCita(Number(citaToDelete.id));
       setCitaToDelete(null);
       setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleEditClick = (cita: any) => {
+    setCitaToEdit(cita);
+    setNewFecha(null);
+    setNewHora('');
+    setHorariosDisponibles([]);
+    setIsEditModalOpen(true);
+  };
+
+  const handleFechaChange = async (date: Date) => {
+    setNewFecha(date);
+    // Simular carga de horarios disponibles
+    const horarios = ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
+    setHorariosDisponibles(horarios);
+  };
+
+  const confirmEdit = async () => {
+    if (citaToEdit && newFecha && newHora) {
+      await updateCita(Number(citaToEdit.id), {
+        fecha: newFecha.toISOString(),
+        hora: newHora
+      });
+      setCitaToEdit(null);
+      setIsEditModalOpen(false);
+      setNewFecha(null);
+      setNewHora('');
     }
   };
 
@@ -82,6 +115,7 @@ export function MisCitasPage() {
             data={citas}
             columns={columns}
             keyExtractor={(row) => row.id}
+            onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />
         </div>
@@ -98,6 +132,53 @@ export function MisCitasPage() {
         <div className="text-slate-600 space-y-4">
           <p>¿Está seguro que desea cancelar su cita programada con <strong className="text-slate-900">{citaToDelete?.medico}</strong> para el día <strong className="text-slate-900">{citaToDelete?.fecha}</strong>?</p>
           <p className="text-red-600 bg-red-50 p-3 rounded-lg border border-red-100 text-sm">Esta acción es permanente y la fecha quedará libre para otro paciente.</p>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onConfirm={confirmEdit}
+        title="Reprogramar Cita"
+        isDestructive={false}
+        confirmText="Confirmar Cambio"
+      >
+        <div className="text-slate-600 space-y-4">
+          <p>Reprogramando cita con <strong className="text-slate-900">{citaToEdit?.medico}</strong> - {citaToEdit?.especialidad}</p>
+          <p className="text-sm text-slate-500">Fecha actual: {citaToEdit?.fecha} a las {citaToEdit?.hora}</p>
+          
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                <Calendar size={16} /> Nueva Fecha
+              </label>
+              <input
+                type="date"
+                value={newFecha ? newFecha.toISOString().split('T')[0] : ''}
+                onChange={(e) => handleFechaChange(new Date(e.target.value))}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            
+            {newFecha && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                  <Clock size={16} /> Nuevo Horario
+                </label>
+                <select
+                  value={newHora}
+                  onChange={(e) => setNewHora(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Seleccione un horario</option>
+                  {horariosDisponibles.map((hora) => (
+                    <option key={hora} value={hora}>{hora}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
     </div>

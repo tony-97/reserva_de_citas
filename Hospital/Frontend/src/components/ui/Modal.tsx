@@ -39,9 +39,9 @@ export function Modal({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex min-h-screen items-center justify-center p-4">
           <motion.div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
             initial={{ opacity: 0 }}
@@ -51,33 +51,41 @@ export function Modal({
           />
           
           <motion.div
-            className="bg-white rounded-xl shadow-xl w-full max-w-md relative z-10 flex flex-col max-h-[90vh]"
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            className="relative z-10 w-full max-w-xl overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)]"
+            initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.94, y: 24 }}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
           >
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-slate-50/95 px-8 py-5 border-b border-slate-200 flex items-center justify-between gap-4">
+              <div>
+                <h3 id="modal-title" className="text-xl font-semibold text-slate-900">{title}</h3>
+              </div>
+              <button
+                onClick={onClose}
+                aria-label="Cerrar modal"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
             
-            <div className="px-6 py-4 overflow-y-auto">
-              <div className="text-slate-600 text-sm">
-                {children}
-              </div>
+            <div className="px-8 py-6 overflow-y-auto text-slate-700">
+              {children}
             </div>
             
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 rounded-b-xl flex justify-end space-x-3">
-              <Button variant="ghost" onClick={onClose}>
+            <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 px-8 py-4 sm:flex-row sm:justify-end">
+              <Button variant="outline" size="md" onClick={onClose}>
                 {cancelText}
               </Button>
               {onConfirm && (
                 <Button 
+                  size="md"
                   variant={isDestructive ? 'danger' : 'primary'} 
                   onClick={() => {
                     onConfirm();

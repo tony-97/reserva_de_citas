@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { HeroVisual } from '../components/layout/HeroVisual';
 import { Activity, Heart, ShieldPlus, Users, Clock, PhoneCall, MapPin, Award } from 'lucide-react';
 import { Button, Modal } from '../components/ui';
+import { useAuth } from '../context/AuthContext';
 
 export function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedSpecialty, setSelectedSpecialty] = useState<any>(null);
 
   const specialties = [
@@ -62,6 +64,19 @@ export function HomePage() {
   return (
     <div className="bg-slate-50 min-h-screen">
       <HeroVisual />
+
+      {user && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-40">
+          <div className="bg-white border border-primary-100 shadow-lg rounded-2xl px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-secondary-900 font-medium">
+              Bienvenido, <span className="text-primary-600">{user.nombre}</span>
+            </p>
+            {user.role === 'PACIENTE' && (
+              <Button size="sm" onClick={() => navigate('/reservar')}>Ir a reservar cita</Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Specialties Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 -mt-16 relative z-30">

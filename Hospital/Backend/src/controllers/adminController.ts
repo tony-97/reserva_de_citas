@@ -118,7 +118,8 @@ export const adminController = {
 
   async listEspecialidades(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const especialidades = await prisma.especialidad.findMany({ orderBy: { nombre: 'asc' } });
+      // Incluir relación con médicos para que el frontend pueda mostrar conteo
+      const especialidades = await prisma.especialidad.findMany({ orderBy: { nombre: 'asc' }, include: { medicos: true } });
       return res.json(especialidades);
     } catch (e) { next(e); }
   },
