@@ -26,7 +26,7 @@ npm install
 ```
 
 #### 2.3 Crear archivo .env
-Crear un archivo llamado `.env` en la carpeta `Hospital/Backend/` con el siguiente contenido:
+Copia `.env.example` a `.env` en la carpeta `Hospital/Backend/` con el siguiente contenido:
 ```env
 DATABASE_URL="file:./dev.db"
 PORT=3001
