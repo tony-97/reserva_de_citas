@@ -43,7 +43,7 @@ En este proyecto usamos **SQLite**, que guarda toda la base de datos en un archi
 
 ```bash
 npx prisma db push
-npm run seed
+npx prisma db seed
 ```
 
 #### 2.6 Iniciar el backend
